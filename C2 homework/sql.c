@@ -4,6 +4,7 @@
 #include <sqlite3.h>
 
 void Free(int,...);
+void clear_input_buffer(void);
 int inputs(const char*, int, char**);
 int input_id(char**);
 int input_name(char**);
@@ -15,7 +16,7 @@ int input_passwd(char**);
 */
 void Free( int n, ... ){
     int i;
-    char **p;
+    char **p = NULL;
     va_list a;
 
     va_start(a, n);
@@ -25,6 +26,16 @@ void Free( int n, ... ){
         *p = NULL;
     }
     va_end(a);
+}
+
+//清除输入缓冲区
+/*
+   清楚输入缓冲
+*/
+void clear_input_buffer( void ){
+    int c;
+    while( (c = getchar())!='\n' && c!=EOF );
+    return;
 }
 
 // 输入字符串函数
@@ -40,25 +51,22 @@ void Free( int n, ... ){
    1: 中止输入
 */
 int inputs( const char *guide, int limit, char **ap ){
-    fprintf( stderr, "\n%s(0: null, e: exit): ", guide );
+    fprintf( stderr, "%s(0: null, e: exit): ", guide );
     *ap = malloc(limit);
     scanf( "%s", *ap );
-    if( (*ap)[1]==0 ){
-        if( (*ap)[0]=='0'){
-            (*ap) = NULL;
-            Free( 1, ap );
-        }
-        else if( (*ap)[0]=='e' ){
-            Free(1,ap);
-            return 1;
-        }
+    clear_input_buffer();
+    if( strcmp(*ap,"0")==0 ){
+        (*ap) = NULL;
+    }
+    else if( strcmp(*ap,"e")==0 ){
+        Free(1,ap);
+        return 1;
     }
     else if( (*ap)[limit] != 0 ){
         fprintf( stderr, "Memory leak risk when inputting %s!\n", guide );
         Free(1,ap);
         return -1;
     }
-    fflush(stdin);
     return 0;
 }
 
@@ -71,24 +79,23 @@ int inputs( const char *guide, int limit, char **ap ){
    -1: 中止输入
 */
 int input_id(char **idp){
-    idp = NULL;
     int Err = 1;
     while(Err){
-        Free(1,idp);
-        Err = inputs( "Your ID", 10, idp );
+        Err = inputs( "学号", 10, idp );
         if(Err==1){
             Free(1,idp);
             return -1;
         }
         if(Err==0){
-            if((*idp)==NULL ){
-                fprintf( stdout, "Input error!\nID can't be null. \n" );
+            if( (*idp)==NULL ){
+                fprintf( stdout, "学号不能为空。\n" );
                 Err = 1;
+                Free(1,idp);
             }
             else if( !( (*idp)[10]==0 && (*idp)[9]!=0 ) ){
-                fprintf( stdout, "Input error!\nPlease make \
-sure the ID number consists of 10 characters.\n" );
+                fprintf( stdout, "学号只能为10位。\n" );
                 Err = 1;
+                Free(1,idp);
             }
         }
     }
@@ -104,14 +111,15 @@ sure the ID number consists of 10 characters.\n" );
    -1: 中止输入
 */
 int input_name(char **np){
-    np = NULL;
     int Err = 1;
     while(Err){
-        Free(1,np);
-        Err = inputs( "Your name", 100, np );
+        Err = inputs( "名字", 100, np );
         if( Err==1 ){
             Free(1,np);
             return -1;
+        }
+        if( Err==-1 ){
+            Free(1,np);
         }
     }
     return 0;
@@ -128,21 +136,21 @@ int input_name(char **np){
 int input_passwd(char **pp){
     int Err = 1;
     while(Err){
-        Free(1,pp);
-        Err = inputs( "Your password", 100, pp );
+        Err = inputs( "密码", 100, pp );
         if( Err==1 ){
             Free(1,pp);
             return -1;
         }
         if( Err==0 ){
             if( (*pp)==NULL ){
-                fprintf( stdout, "Input error!\nPassword can't be null.\n" );
+                fprintf( stdout, "密码不能为空。\n" );
                 Err = -1;
+                Free(1,pp);
             }
             else if( (*pp)[5]==0 ){
-                fprintf( stdout, "Input error!\nPlease make sure the length\
- of the password is no less than 6.\n" );
+                fprintf( stdout, "密码应长于6位。\n" );
                 Err = -1;
+                Free(1,pp);
             }
         }
     }
@@ -150,9 +158,10 @@ int input_passwd(char **pp){
 }
 
 
-
 /*
 int main(int argc,char *argv[]){
+    char p;
+
     return 0;
 }
 */
