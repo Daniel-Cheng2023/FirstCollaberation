@@ -3,13 +3,6 @@
 #include <string.h>
 #include <sqlite3.h>
 
-void Free(int,...);
-void clear_input_buffer(void);
-int inputs(const char*, int, char**);
-int input_id(char**);
-int input_name(char**);
-int input_passwd(char**);
-
 // 释放指针+初始化函数
 /*
    释放 n 个char*类型的指针
