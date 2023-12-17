@@ -1,8 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sqlite3.h>
-
 // 释放指针+初始化函数
 /*
    释放 n 个char*类型的指针
@@ -150,20 +145,34 @@ int input_passwd(char **pp){
     return 0;
 }
 
-// 结束exec后输出错误的函数
+// 输出sqlite3_exec错误的函数
 /*
    rc 为exec返回的整数, ErrMsg 为exec最后的参数, fail 为失败时的输出, success 为成功时的输出
 */
-void exec_report( int rc, char *ErrMsg, char *fail, char *success ){
+int exec_report( int rc, char *ErrMsg, char *fail, char *success ){
     if( rc != SQLITE_OK ){
       fprintf(stderr, "%s: %s\n", fail, ErrMsg);
       printf( "err = %d\n", rc );
       sqlite3_free(ErrMsg);
+      return 1;
     }
     else{
       fprintf(stdout,"%s\n", success );
+      return 0;
     }
-    return ;
+}
+
+// 输出sqlite3_mprintf错误的函数
+/*
+   s为sqlite3_mprintf返回值, errmsg为自己输入的报错字符串
+*/
+int mprintf_report( char *s, const char *errmsg ){
+    if( s == NULL ){
+        sqlite3_free( s );
+        printf( "%s\n", errmsg );
+        return 1;
+    }
+    return 0;
 }
 
 // 输入文本
