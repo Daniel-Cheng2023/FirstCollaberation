@@ -1,3 +1,38 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sqlite3.h>
+#include "input.c"
+
+/*
+   当前使用者的账号信息
+*/
+struct account{
+    char *id;
+    char *name;
+    char *password;
+    char *major_school;
+    char *major_department;
+    char *minor_school;
+    char *minor_department;
+    char *identity;
+    char **courses;
+    char **clubs;
+};
+struct account user;
+
+#define id user.id
+#define name user.name
+#define password user.password
+#define major_school user.major_school
+#define major_department user.major_department
+#define minor_school user.minor_school
+#define minor_department user.minor_department
+#define identity user.identity
+
+int flag = 0;
+const char *column_name[8] = { "学号", "姓名", "密码", "主修学院", "主修系", "辅修学院", "辅修系", "身份" };
+#include "login.c"
 #include "notice.c"
 
 int main( int argc, char *argv[] ){
