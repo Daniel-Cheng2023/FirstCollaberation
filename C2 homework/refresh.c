@@ -136,8 +136,23 @@ int refresh(){
         sqlite3_free( errmsg );
     }
     // 收件箱建表
-    stmt0 = "create table %q_receive \
-    AS select * from NOTICES where rowid in (\
+    stmt0 = "create table %q_receive(id TEXT not NULL,title TEXT,content TEXT not null,announcer_name TEXT,announcer_id TEXT,launch_time TEXT default current_timestamp,effect_time TEXT,dead_time TEXT);";
+    stmt = sqlite3_mprintf( stmt0, user.id );
+    if( stmt == NULL ){
+        sqlite3_free( stmt );
+        printf( "无法生成收件箱建表语句\n" );
+        return 1;
+    }
+    err = sqlite3_exec( db, stmt, NULL, NULL, &errmsg );
+    if( err ){
+        sqlite3_free( stmt );
+        printf( "无法执行建立收件箱语句\nsql error: %s\n", errmsg );
+        sqlite3_free( errmsg );
+    }
+    sqlite3_free(stmt);
+    stmt0 = "insert into table %q_receive\
+    (id, title, content, announcer_name, announcer_id, launch_time, effect_time, dead_time) \
+    select rowid, * from NOTICES where rowid in (\
         select NOTICE_DEPARTMENT.ID from NOTICE_DEPARTMENT where \
             NOTICE_DEPARTMENT.department_ID in (\
                 select ACCOUNT_DEPARTMENT.department_ID from ACCOUNT_DEPARTMENT where \
@@ -173,13 +188,13 @@ int refresh(){
     user.id, user.id );
     if( stmt == NULL ){
         sqlite3_free( stmt );
-        printf( "无法生成收件箱建表语句\n" );
+        printf( "无法生成收件箱插表语句\n" );
         return 1;
     }
     err = sqlite3_exec( db, stmt, NULL, NULL, &errmsg );
     if( err ){
         sqlite3_free( stmt );
-        printf( "无法执行建立收件箱语句\nsql error: %s\n", errmsg );
+        printf( "无法执行插入收件箱语句\nsql error: %s\n", errmsg );
         sqlite3_free( errmsg );
     }
     sqlite3_free( stmt );
@@ -189,8 +204,8 @@ int refresh(){
         return err;
     }
     // 自己发送的通知建表
-    stmt0 = "create table %q_announce as select * from NOTICES where announcer_id==%Q;";
-    stmt = sqlite3_mprintf( stmt0, user.id, user.id );
+    stmt0 = "create table %q_announce(id TEXT not NULL,title TEXT,content TEXT not null,announcer_name TEXT,announcer_id TEXT,launch_time TEXT default current_timestamp,effect_time TEXT,dead_time TEXT);";
+    stmt = sqlite3_mprintf( stmt0, user.id );
     if( stmt == NULL ){
         sqlite3_free( stmt );
         printf( "无法生成自己发送建表语句\n" );
@@ -200,6 +215,20 @@ int refresh(){
     if( err ){
         sqlite3_free( stmt );
         printf( "无法执行自己发送建表语句\nsql error: %s\n", errmsg );
+        sqlite3_free( errmsg );
+    }
+    sqlite3_free(stmt);
+    stmt0 = "insert into %q_announce(id, title, content, announcer_name, announcer_id, launch_time, effect_time, dead_time) select rowid, * from NOTICES where announcer_id==%Q;";
+    stmt = sqlite3_mprintf( stmt0, user.id, user.id );
+    if( stmt == NULL ){
+        sqlite3_free( stmt );
+        printf( "无法生成自己发送插表语句\n" );
+        return 1;
+    }
+    err = sqlite3_exec( db, stmt, NULL, NULL, &errmsg );
+    if( err ){
+        sqlite3_free( stmt );
+        printf( "无法执行自己发送插表语句\nsql error: %s\n", errmsg );
         sqlite3_free( errmsg );
     }
     sqlite3_free( stmt );
