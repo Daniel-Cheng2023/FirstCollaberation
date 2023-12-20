@@ -1,3 +1,234 @@
+// 查询记录个数函数
+/*
+   p 指向的整数即为记录的个数
+*/
+int callback_frequency( void *p, int argc, char **argv, char **column ){
+    int *i = (int *)p;
+    (*i)++;
+    return 0;
+}
+
+// 记录是哪个院系/课程/社团的成员及权限
+/*
+   将查询到的本账号的组织关系和权限存入 user
+   ~[0]表示在其中担任管理员的组织, ~[1]表示在其中担任发送者的组织, ~[2]表示在其中担任接收者的组织
+
+   mode: 
+   0: 查询院系
+   1: 查询课程
+   2: 查询社团
+
+   return:
+   0:
+   1: 
+   2: 
+*/
+int callback_record( void *p, int argc, char **argv, char **column ){
+    int j, i, a, b, mode = *((int *)p);
+    char **s, **s0, **s1, **s2;
+
+    a = atoi( argv[argc-1] );
+    if( mode==0 ){
+        s0 = &(user.departments[0][num[0][0]].id);
+        s1 = &(user.departments[1][num[0][1]].id);
+        s2 = &(user.departments[2][num[0][2]].id);
+    }
+    else if( mode==1 ){
+        s0 = &(user.courses[0][num[1][0]].id);
+        s1 = &(user.courses[1][num[1][1]].id);
+        s2 = &(user.courses[2][num[1][2]].id);
+    }
+    else if( mode==2 ){
+        s0 = &(user.clubs[0][num[2][0]].id);
+        s1 = &(user.clubs[1][num[2][1]].id);
+        s2 = &(user.clubs[2][num[2][2]].id);
+    }
+    for( j=0;j<3;j++ ){
+        if( j==0 ){
+            if( (a&4)==4 ){
+                if( mode==0 ){
+                    num[0][0]++;
+                }
+                else if( mode==1 ){
+                    num[1][0]++;
+                }
+                else if( mode==2 ){
+                    num[2][0]++;
+                }
+                s = s0;
+            }
+            else{
+                continue;
+            }
+        }
+        if( j==1 ){
+            if( (a&2)==2 ){
+                if( mode==0 ){
+                    num[0][1]++;
+                }
+                else if( mode==1 ){
+                    num[1][1]++;
+                }
+                else if( mode==2 ){
+                    num[2][1]++;
+                }
+                s = s1;
+            }
+            else{
+                continue;
+            }
+        }
+        if( j==2 ){
+            if( (a&1)==1 ){
+                if( mode==0 ){
+                    num[0][2]++;
+                }
+                else if( mode==1 ){
+                    num[1][2]++;
+                }
+                else if( mode==2 ){
+                    num[2][2]++;
+                }
+                s = s2;
+            }
+            else{
+                continue;
+            }
+        }
+        for( i=0;i<argc-1;i++ ){
+            if( argv[i]==NULL ){
+                (*s) = NULL;
+            }
+            else{
+                b = strlen( argv[i] ) + 1;
+                (*s) = (char *)malloc(b);
+                memcpy( (*s), argv[i], b );
+            }
+            s++;
+        }
+    }
+    return 0;
+}
+
+// 存储院系、课程及社团信息
+/*
+   return:
+   0: 正常完成
+   1: 无法生成语句
+   2: 无法执行语句
+*/
+int record(){
+    int err, a = 0, b = 1, c = 2, i, j;
+    char *stmt0, *stmt, *errmsg;
+
+    // 初始化
+    for( i=0;i<3;i++ ){
+        for( j=0;j<4;j++ ){
+            num[i][j] = 0;
+        }
+    }
+    for( i=0;i<100;i++ ){
+        for( j=0;j<3;j++ ){
+            Free( 7, &(user.departments[j][i]).id, &(user.departments[j][i]).name, &(user.departments[j][i]).class, &(user.courses[j][i]).id, &(user.courses[j][i]).name, &(user.clubs[j][i]).id, &(user.clubs[j][i]).id);
+        }
+    }
+    // 存储院系信息
+    stmt0 = "select DEPARTMENTS.ID, DEPARTMENTS.name, ACCOUNT_DEPARTMENT.class, \
+    ACCOUNT_DEPARTMENT.identity from DEPARTMENTS inner join ACCOUNT_DEPARTMENT on \
+    DEPARTMENTS.ID == ACCOUNT_DEPARTMENT.department_ID and ACCOUNT_DEPARTMENT.ID == %Q;";
+    stmt = sqlite3_mprintf( stmt0, user.id );
+    if( stmt == NULL ){
+        sqlite3_free( stmt );
+        printf( "存储社团信息时无法生成语句\n" );
+        return 1;
+    }
+    err = sqlite3_exec( db, stmt, callback_record, &a, &errmsg );
+    if( err ){
+        sqlite3_free( stmt );
+        printf( "无法存储所在院系个数\nsql error: %s\n", errmsg );
+        sqlite3_free( errmsg );
+        return 2;
+    }
+    // 存储课程信息
+    stmt0 = "select COURSES.ID, COURSES.name, ACCOUNT_COURSE.identity \
+    from COURSES inner join ACCOUNT_COURSE on \
+    COURSES.ID == ACCOUNT_COURSE.course_ID and ACCOUNT_COURSE.ID == %Q;";
+    stmt = sqlite3_mprintf( stmt0, user.id );
+    if( stmt == NULL ){
+        sqlite3_free( stmt );
+        printf( "存储课程信息时无法生成语句\n" );
+        return 1;
+    }
+    err = sqlite3_exec( db, stmt, callback_record, &b, &errmsg );
+    if( err ){
+        sqlite3_free( stmt );
+        printf( "无法存储所在课程个数\nsql error: %s\n", errmsg );
+        sqlite3_free( errmsg );
+        return 2;
+    }
+    // 存储社团信息
+    stmt0 = "select CLUBS.ID, CLUBS.name, ACCOUNT_CLUB.identity \
+    from CLUBS inner join ACCOUNT_CLUB on \
+    CLUBS.ID == ACCOUNT_CLUB.course_ID and ACCOUNT_CLUB.ID == %Q;";
+    stmt = sqlite3_mprintf( stmt0, user.id );
+    if( stmt == NULL ){
+        sqlite3_free( stmt );
+        printf( "存储社团信息时无法生成语句\n" );
+        return 1;
+    }
+    err = sqlite3_exec( db, stmt, callback_record, &c, &errmsg );
+    if( err ){
+        sqlite3_free( stmt );
+        printf( "无法存储所在社团个数\nsql error: %s\n", errmsg );
+        sqlite3_free( errmsg );
+        return 2;
+    }
+    return 0;
+}
+
+// 输出所在组织权限
+/*
+   p: 
+   0: 查询院系
+   1: 查询课程
+   2: 查询社团
+
+   o:
+   0: 查询管理员权限
+   1: 查询发送者权限
+   2: 查询接收者权限
+
+*/
+int get_authority( int p , int o ){
+    int i, a;
+    char *s;
+
+    putchar('\n');
+    if( o==0 ){
+        s = "管理员";
+    }
+    else if( o==1 ){
+        s = "发送者";
+    }
+    else if( o==2 ){
+        s = "接收者";
+    }
+    // 查询院系权限
+    for( i=0;i<num[p][o];i++ ){
+        if( p==0 ){
+            printf( "%d. %s%s 权限: %s\n", i+1, (user.departments[o][i]).name, (user.departments[o][i]).class, s );
+        }
+        if( p==1 ){
+            printf( "%d. %s 权限: %s\n", i+1, (user.courses[o][i]).name, s );
+        }
+        if( p==2 ){
+            printf( "%d. %s 权限: %s\n", i+1, (user.clubs[o][i]).name, s );
+        }
+    }
+    putchar('\n');
+    return 0;
+}
+
 // 输出收件箱或自己发布的通知函数
 /*
    time 表示查询到第几个结果, 值由 void *t 传入
@@ -71,8 +302,16 @@ int select_notices( int mode ){
     int err, t;
     char *stmt0, *stmt, *errmsg;
 
-    (mode==0) ? (printf( "收件箱: \n" ), t=1, stmt0="select * from %q_receive") : \
-(printf( "你发布的通知: \n"), t=-1, stmt0="select * from %q_announce;");
+    if( mode==0 ){
+        printf( "收件箱: \n" );
+        t=1;
+        stmt0="select * from %q_receive;";
+    }
+    else{
+        printf( "你发布的通知: \n");
+        t=-1;
+        stmt0="select * from %q_announce;";
+    }
     stmt = sqlite3_mprintf( stmt0, user.id );
     if( stmt == NULL ){
         sqlite3_free( stmt );
@@ -104,9 +343,11 @@ int select_notices( int mode ){
    <>: 表示将整体(包括尖括号)替换为尖括号内部字符指针对应的字符串
 */
 int refresh(){
-    int err, t;
+    int err, t, i, j;
     char *stmt0, *stmt, *errmsg;
 
+    system( "clear" );
+    printf( "你好, %s %s\n", user.name, user.id );
     // 消除之前可能存在的表
     stmt0 = "drop table %q_receive;";
     stmt = sqlite3_mprintf( stmt0, user.id );
@@ -234,7 +475,17 @@ int refresh(){
     sqlite3_free( stmt );
     // 查询自己发的通知
     err = select_notices(1);
-    return err;
+    if( err ){
+        return err;
+    }
+    record();
+    printf( "你所在的组织: \n" );
+    for( i=0;i<3;i++ ){
+        for( j=0;j<3;j++ ){
+            get_authority( j, i );
+        }
+    }
+    return 0;
 }
 
 /*

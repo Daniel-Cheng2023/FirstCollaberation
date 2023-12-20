@@ -10,15 +10,17 @@ void Free( int n, ... ){
     va_start(a, n);
     for( i=0;i<n;i++ ){
         p = va_arg( a, char** );
-        free(*p);
-        *p = NULL;
+        if( (*p)!=NULL ){
+            free(*p);
+            *p = NULL;
+        }
     }
     va_end(a);
 }
 
 //清除输入缓冲区
 /*
-   清楚输入缓冲
+   清除输入缓冲
 */
 void clear_input_buffer( void ){
     int c;
@@ -40,7 +42,7 @@ void clear_input_buffer( void ){
 */
 int inputs( const char *guide, int limit, char **ap ){
     printf( "%s(0: null, e: exit): ", guide );
-    *ap = malloc(limit);
+    *ap = (char *)malloc(limit);
     scanf( "%s", *ap );
     clear_input_buffer();
     if( strcmp(*ap,"0")==0 ){
@@ -148,31 +150,32 @@ int input_passwd(char **pp){
 // 输出sqlite3_exec错误的函数
 /*
    rc 为exec返回的整数, ErrMsg 为exec最后的参数, fail 为失败时的输出, success 为成功时的输出
+   return: 错误时return err, 正确时return true
 */
-int exec_report( int rc, char *ErrMsg, char *fail, char *success ){
+int exec_report( int rc, char *ErrMsg, char *fail, char *success, int err, int true ){
     if( rc != SQLITE_OK ){
       fprintf(stderr, "%s: %s\n", fail, ErrMsg);
       printf( "err = %d\n", rc );
       sqlite3_free(ErrMsg);
-      return 1;
+      return err;
     }
     else{
       fprintf(stdout,"%s\n", success );
-      return 0;
+      return true;
     }
 }
 
 // 输出sqlite3_mprintf错误的函数
 /*
-   s为sqlite3_mprintf返回值, errmsg为自己输入的报错字符串
+   s为sqlite3_mprintf返回值, errmsg为自己输入的报错字符串, 错误时return err, 正确时return true
 */
-int mprintf_report( char *s, const char *errmsg ){
+int mprintf_report( char *s, const char *errmsg, int err, int true ){
     if( s == NULL ){
         sqlite3_free( s );
         printf( "%s\n", errmsg );
-        return 1;
+        return err;
     }
-    return 0;
+    return true;
 }
 
 // 输入文本

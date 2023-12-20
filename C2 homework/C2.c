@@ -4,6 +4,21 @@
 #include <sqlite3.h>
 #include "input.c"
 
+struct department{
+    char *id;
+    char *name;
+    char *class;
+};
+
+struct club{
+    char *id;
+    char *name;
+};
+
+struct course{
+    char *id;
+    char *name;
+};
 /*
    当前使用者的账号信息
 */
@@ -11,37 +26,26 @@ struct account{
     char *id;
     char *name;
     char *password;
-    char *major_school;
-    char *major_department;
-    char *minor_school;
-    char *minor_department;
-    char *identity;
-    char **courses;
-    char **clubs;
+    struct department departments[3][100];
+    struct course courses[3][100];
+    struct club clubs[3][100];
 };
 struct account user;
+int num[3][3];
 
-#define id user.id
-#define name user.name
-#define password user.password
-#define major_school user.major_school
-#define major_department user.major_department
-#define minor_school user.minor_school
-#define minor_department user.minor_department
-#define identity user.identity
+sqlite3 *db;
 
-int flag = 0;
-const char *column_name[8] = { "学号", "姓名", "密码", "主修学院", "主修系", "辅修学院", "辅修系", "身份" };
+const char *column_name[3] = { "学号", "姓名", "密码" };
 #include "login.c"
-#include "notice.c"
+#include "refresh.c"
+#include "account.c"
 
 int main( int argc, char *argv[] ){
-    sqlite3 *db;
     int err = 0;
     char *errmsg;
     
     err = sqlite3_open( "C2.db", &db );
-    if( err ){
+    if( err!=0 ){
       fprintf( stderr, "无法打开数据库: %s\n", sqlite3_errmsg(db) );
       sqlite3_close(db);
       return(1);
@@ -50,9 +54,9 @@ int main( int argc, char *argv[] ){
       fprintf(stdout,"成功打开数据库\n");
     }
     err = sqlite3_exec( db, "PRAGMA foreign_keys=true;", NULL, NULL, &errmsg );
-    exec_report( err, errmsg, "无法设置外键", "成功设置外键" );
-    while( id == NULL ){
-        int a = 2;
+    exec_report( err, errmsg, "无法设置外键", "成功设置外键", 1, 0 );
+    while( user.id == NULL ){
+        char a = 2;
         while( a!='e' && a!='0' && a!='1' ){
             printf( "\n选择登录或注册(0: 登录, 1: 注册, e: 退出程序): " );
             a = getchar();
@@ -60,20 +64,23 @@ int main( int argc, char *argv[] ){
         }
         switch(a){
             case '0':{
-                err = login( db );
+                err = login();
                 break;
             }
             case '1':{
-                err = regist( db );
+                err = regist();
                 break;
             }
             case 'e':{
-                id = "exit";
+                user.id = "exit";
                 return 0;
             }
         }
     }
-    refresh( db );
+    if( err ){
+        return 1;
+    }
+    refresh();
 /*
     while(1) {
         char a = 2;
