@@ -35,6 +35,7 @@ int add_people(){
                 stmt0 = "insert into ACCOUNT_DEPARTMENT values(%Q,%Q,%Q,%c);";
                 printf( "你在如下院系/班级担任管理员\n" );
                 get_authority( a, 0 );
+                err = 1;
                 while( err!=0 ){
                     printf( "请选择加人进入哪个院系/班级(请输入院系前的编号, -1: 返回上一级): \n" );
                     scanf( "%d", &id );
@@ -49,6 +50,7 @@ int add_people(){
                         continue;
                     }
                     class = (user.departments[0][id-1]).class;
+                    err = 0;
                 }
                 break;
             }
@@ -56,6 +58,7 @@ int add_people(){
                 stmt0 = "insert into ACCOUNT_COURSE values(%Q,%Q,%c);";
                 printf( "你在如下课程担任管理员\n" );
                 get_authority( a, 0 );
+                err = 1;
                 while( err!=0 ){
                     printf( "请选择加人进入哪个课程(请输入课程的编号, e: 返回上一级): \n" );
                     scanf( "%d", &id );
@@ -69,6 +72,7 @@ int add_people(){
                         printf( "输入错误\n" );
                         continue;
                     }
+                    err = 0;
                 }
                 break;
             }
@@ -76,6 +80,7 @@ int add_people(){
                 stmt0 = "insert into ACCOUNT_CLUB values(%Q,%Q,%c);";
                 printf( "你在如下社团担任管理员\n" );
                 get_authority( a, 0 );
+                err = 1;
                 while( err!=0 ){
                     printf( "请选择加人进入哪个社团(请输入社团的编号, e: 返回上一级): \n" );
                     scanf( "%d", &id );
@@ -89,6 +94,7 @@ int add_people(){
                         printf( "输入错误\n" );
                         continue;
                     }
+                    err = 0;
                 }
                 break;
             }
@@ -100,6 +106,7 @@ int add_people(){
             continue;
         }
         // 选择加人学号和权限
+        err = -1;
         while( err==-1 ){
             printf( "被加者的" );
             input_id( &ID );
@@ -216,6 +223,7 @@ int delete_people(){
                 select0 = "select rowid from ACCOUNT_DEPARTMENT where department_ID==%Q and ID==%Q and class==%Q limit 1 offset 1;";
                 printf( "你在如下院系/班级担任管理员\n" );
                 get_authority( a, 0 );
+                err = 1;
                 while( err!=0 ){
                     printf( "请选择从哪个院系/班级删人(请输入院系前的编号, -1: 返回上一级): \n" );
                     scanf( "%d", &id );
@@ -230,6 +238,7 @@ int delete_people(){
                         continue;
                     }
                     class = (user.departments[0][id-1]).class;
+                    err = 0;
                 }
                 break;
             }
@@ -238,6 +247,7 @@ int delete_people(){
                 select0 = "select rowid from ACCOUNT_COURSE where course_ID==%Q and ID==%Q limit 1 offset 1;";
                 printf( "你在如下课程担任管理员\n" );
                 get_authority( a, 0 );
+                err = 1;
                 while( err!=0 ){
                     printf( "请选择从哪个课程删人(请输入课程的编号, e: 返回上一级): \n" );
                     scanf( "%d", &id );
@@ -251,6 +261,7 @@ int delete_people(){
                         printf( "输入错误\n" );
                         continue;
                     }
+                    err = 0;
                 }
                 break;
             }
@@ -259,6 +270,7 @@ int delete_people(){
                 select0 = "select rowid from ACCOUNT_CLUB where club_ID==%Q and ID==%Q limit 1 offset 1;";
                 printf( "你在如下社团担任管理员\n" );
                 get_authority( a, 0 );
+                err = 1;
                 while( err!=0 ){
                     printf( "请选择从哪个社团删人(请输入社团的编号, e: 返回上一级): \n" );
                     scanf( "%d", &id );
@@ -272,6 +284,7 @@ int delete_people(){
                         printf( "输入错误\n" );
                         continue;
                     }
+                    err = 0;
                 }
                 break;
             }
@@ -283,6 +296,7 @@ int delete_people(){
             continue;
         }
         // 选择删人学号
+        err = -1;
         while( err==-1 ){
             printf( "被删者的" );
             input_id( &ID );
@@ -432,12 +446,10 @@ int log_out(){
         }
     }
     Free( 3, &(user.id), &(user.name), &(user.password) );
-    system("clear");
     return 0;
 }
 
 // 注销函数
-/**/
 int close(){
     int i, j, err;
     char c=0, *errmsg=NULL, *stmt, *stmt0;

@@ -108,6 +108,7 @@ int login(){
     char type = 0, *errmsg = NULL, *ID_name, *passwd, *stmt0;
     
     while( err==-1 ){
+        type = 0;
         while( type!='e' && type!='0' && type!='1' ){
             printf("\n请输入登录方式(0: 学号登录, 1: 姓名登录, e: 返回上一级): ");
             type = getchar();
@@ -128,12 +129,15 @@ int login(){
                 return -1;
             }
         }
-    }
-    // input passwd
-    err = input_passwd( &passwd );
-    if( err== -1 ){
-        Free( 1, &ID_name );
-        return -1;
+        if(err==-1){
+            continue;
+        }
+        // input password
+        err = input_passwd( &passwd );
+        if( err==-1 ){
+            Free( 1, &ID_name );
+            err = -1;
+        }
     }
     char *stmt;
     stmt = sqlite3_mprintf( stmt0, ID_name, passwd );
@@ -150,7 +154,6 @@ int login(){
         sqlite3_free(errmsg);
         return 2;
     }
-    system( "clear" );
     if( user.id!=NULL ){
         printf( "成功登录!\n");
         char **p = &user.id;
@@ -164,7 +167,7 @@ int login(){
         printf( "未查找到该账号\n若为第一次使用, 请先注册一个账号\n" );
     }
     sqlite3_free(stmt);
-    return 0;
+    return err;
 }
 
 /*

@@ -321,7 +321,7 @@ int select_notices( int mode ){
     err = sqlite3_exec( db, stmt, refresh_callback, &t, &errmsg );
     if( err ){
         sqlite3_free( stmt );
-        printf( "无法查询所在社团个数\nsql error: %s\n", errmsg );
+        printf( "无法查询通知个数\nsql error: %s\n", errmsg );
         sqlite3_free( errmsg );
         return 1;
     }
@@ -346,7 +346,7 @@ int refresh(){
     int err, t, i, j;
     char *stmt0, *stmt, *errmsg;
 
-    system( "clear" );
+    putchar('\n');
     printf( "你好, %s %s\n", user.name, user.id );
     // 消除之前可能存在的表
     stmt0 = "drop table %q_receive;";
@@ -356,7 +356,9 @@ int refresh(){
         printf( "删除收件箱表时无法生成语句\n" );
         return 1;
     }
+    printf("\n%s\n", stmt);
     err = sqlite3_exec( db, stmt, NULL, NULL, &errmsg );
+    printf("\n%s\n", stmt);
     if( err ){
         sqlite3_free( stmt );
         printf( "无法执行删除收件箱语句\nsql error: %s\n", errmsg );
@@ -364,21 +366,18 @@ int refresh(){
     }
     stmt0 = "drop table %q_announce;";
     stmt = sqlite3_mprintf( stmt0, user.id );
-    if( err ){
-        sqlite3_free( stmt );
-        printf( "无法执行删除收件箱语句\nsql error: %s\n", errmsg );
-        sqlite3_free( errmsg );
-        return 2;
-    }
+    printf("\n%s\n", stmt);
     err = sqlite3_exec( db, stmt, NULL, NULL, &errmsg );
+    printf("\n%s\n", stmt);
+    sqlite3_free(stmt);
     if( err ){
-        sqlite3_free( stmt );
         printf( "无法执行删除自己发送的通知的表语句\nsql error: %s\n", errmsg );
         sqlite3_free( errmsg );
     }
     // 收件箱建表
     stmt0 = "create table %q_receive(id TEXT not NULL,title TEXT,content TEXT not null,announcer_name TEXT,announcer_id TEXT,launch_time TEXT default current_timestamp,effect_time TEXT,dead_time TEXT);";
     stmt = sqlite3_mprintf( stmt0, user.id );
+    printf("\n%s\n", stmt);
     if( stmt == NULL ){
         sqlite3_free( stmt );
         printf( "无法生成收件箱建表语句\n" );

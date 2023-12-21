@@ -17,7 +17,7 @@ int callback_id(void *data , int argc , char **argv , char **azColName) {
 	return 0;
 }
 
-inline int Save(sqlite3 *db , char *Title , char *Text , char *Announcer) {
+int Save( char *Title , char *Text , char *Announcer) {
 	char *ErrMsg = NULL , *ErrNum = NULL;
     int nw, nw2, cur = 0; //nw 表示异常状态 ErrMsg 为抛出的异常, cur 为发送的这条消息在 NOTICES 中的 ID
 	const char *op = "insert into NOTICES(title, content, announcer) values(%Q , %Q , %Q)";
@@ -44,20 +44,20 @@ inline int Save(sqlite3 *db , char *Title , char *Text , char *Announcer) {
 }
 
 //输入文本(参数为名字)
-inline int Init(sqlite3 *db,char *NAME) {
+int Init(char *NAME) {
 	char *Title = NULL , *Text = NULL; 
 	input_text("请输入标题:\n", 60 , &Title);
 	input_text("请输入正文\n:", 200 , &Text);
-	return Save(db , Title , Text , NAME);
+	return Save( Title , Text , NAME);
 } 
 
 //社团中选择成员
-inline int Choose_1(sqlite3 *db , int Id) {
+int Choose_1( int Id ) {
 	char *ErrMsg = NULL, *Errsnd = NULL , *sql = NULL;
     int nw;
 	const char *data = "社团: "; char *ID = NULL;
 	const char *op = "select * from CLUBS";
-	nw = sqlite3_exec(db , sql , callback , (void *)data , &ErrMsg);
+	nw = sqlite3_exec( db, sql , callback , (void *)data , &ErrMsg);
 	if(nw != SQLITE_OK) {
 		fprintf(stderr , "获取失败\n");
 		sqlite3_free(ErrMsg);
@@ -89,7 +89,8 @@ inline int Choose_1(sqlite3 *db , int Id) {
 	return -1;
 }
 
-inline int Choose_2(sqlite3 *db , int Id) {
+// 学院中选择成员
+int Choose_2( int Id ) {
 	char *ErrMsg = NULL, *Errsnd = NULL , *sql = NULL;
     int nw;
 	const char *data = "学院: "; char *ID_1 = NULL , *ID_2 = NULL; //1 学院 2 班级
@@ -128,8 +129,18 @@ inline int Choose_2(sqlite3 *db , int Id) {
 }
 
 //发送的主过程
-inline int Send(sqlite3 *db , char *NAME , int type) {
-	int Num = 0;
+int Send( char *NAME ) {
+	int Num = 0, err=-1;
+	char type = 0;
+
+	while( type!='0' && type!='1' && type!='2' ){
+		printf( "请选择发送通知给哪些组织(0: 院系, 2: 社团, e: 返回菜单):" );
+		type = getchar();
+		clear_input_buffer();
+		if(type=='e'){
+			return -1;
+		}
+	}
 	while(1) {
 		++Num; //防止卡死
 		if(Num == 100) {
@@ -137,24 +148,16 @@ inline int Send(sqlite3 *db , char *NAME , int type) {
 			break;
 		}
 		int tmp = 0; //暂存返回结果
-		tmp = Init(db , NAME);
+		tmp = Init(NAME);
 		if(tmp == -1) continue; 
 		if(type == 1) {
-			if(Choose_1(db , tmp) == -1) continue;
+			if(Choose_1( tmp) == -1) continue;
 			else break;
 		}
 		if(type == 2) {
-			if(Choose_2(db , tmp) == -1) continue;
+			if(Choose_2( tmp) == -1) continue;
 			else break;
 		}
 	}
 	return 0 ;
 }
-
-/*
-int main(int argc,char *argv[]){
-    char p;
-
-    return 0;
-}
-*/

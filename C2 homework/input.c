@@ -147,37 +147,6 @@ int input_passwd(char **pp){
     return 0;
 }
 
-// 输出sqlite3_exec错误的函数
-/*
-   rc 为exec返回的整数, ErrMsg 为exec最后的参数, fail 为失败时的输出, success 为成功时的输出
-   return: 错误时return err, 正确时return true
-*/
-int exec_report( int rc, char *ErrMsg, char *fail, char *success, int err, int true ){
-    if( rc != SQLITE_OK ){
-      fprintf(stderr, "%s: %s\n", fail, ErrMsg);
-      printf( "err = %d\n", rc );
-      sqlite3_free(ErrMsg);
-      return err;
-    }
-    else{
-      fprintf(stdout,"%s\n", success );
-      return true;
-    }
-}
-
-// 输出sqlite3_mprintf错误的函数
-/*
-   s为sqlite3_mprintf返回值, errmsg为自己输入的报错字符串, 错误时return err, 正确时return true
-*/
-int mprintf_report( char *s, const char *errmsg, int err, int true ){
-    if( s == NULL ){
-        sqlite3_free( s );
-        printf( "%s\n", errmsg );
-        return err;
-    }
-    return true;
-}
-
 // 输入文本
 int input_text(const char *guide , int Limits , char **txt) {
 //  fprintf( stderr, "%s(0: null, e: exit): ", guide);

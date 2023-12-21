@@ -39,8 +39,8 @@ const char *column_name[3] = { "学号", "姓名", "密码" };
 #include "login.c"
 #include "refresh.c"
 #include "account.c"
-#include "send.c"
 int Len = 0 , cnt = 0;
+#include "send.c"
 #include "withdraw.c"
 
 /*
@@ -134,9 +134,11 @@ int main(){
     else{
         printf("成功设置外键\n");
     }
+    err = -1;
     while( err==-1 ){
-        while( user.id == NULL ){
-            c = 2;
+        err = 0;
+        while( user.id==NULL && ( err==-1 || err==0 ) ){
+            c = 0;
             while( c!='e' && c!='0' && c!='1' ){
                 printf( "\n选择登录或注册(0: 登录, 1: 注册, e: 退出程序): " );
                 c = getchar();
@@ -144,11 +146,15 @@ int main(){
             }
             switch(c){
                 case '0':{
-                    login();
+                    err = login();
+                    if(err==-1){
+                        break;
+                    }
+                    err = refresh();
                     break;
                 }
                 case '1':{
-                    regist();
+                    err = regist();
                     break;
                 }
                 case 'e':{
@@ -157,19 +163,55 @@ int main(){
                 }
             }
         }
-        err = refresh();
         if(err){
             return err;
         }
         err = -1;
-        while( err==-1 ){
+        while( err==-1 || err==0 ){
             printf("----------菜单----------\n");
-            if( (user.departments[0][0]).id==NULL && (user.courses[0][0]).id==NULL && (user.clubs[0][0]).id==NULL ){
-                while( c!='e' && c!='3' && c!='1' && c!='2' ){
-                    printf("1: 详细查询通知\n2: 修改密码\n3: 注销用户\ne: 登出\n");
-                    c = getchar();
-                    clear_input_buffer();
+            c = 0;
+            while( c!='e' && c!='0' && c!='1' && c!='2' && c!='3' && c!='4' && c!='5' ){
+                printf("0: 详细查询通知\n1: 修改密码\n2: 注销用户\n3: 人事调动\n4: 发送通知\n5: 撤回通知\ne: 登出\n");
+                c = getchar();
+                clear_input_buffer();
+            }
+            switch(c){
+                case '0':{
+                    err = select_notices(0);
+                    if(err){
+                        break;
+                    }
+                    err = select_notices(1);
+                    break;
                 }
+                case '1':{
+                    err = change_password();
+                    break;
+                }
+                case '2':{
+                    err = close();
+                    break;
+                }
+                case '3':{
+                    err = change_people();
+                    break;
+                }
+                case '4':{
+                    err = Send( user.name );
+                    break;
+                }
+                case '5':{
+                    err = Withdraw();
+                    break;
+                }
+                case 'e':{
+                    err = log_out();
+                    break;
+                }
+            }
+            if( c=='e' || c=='2' ){
+                err = -1;
+                break;
             }
         }
     }

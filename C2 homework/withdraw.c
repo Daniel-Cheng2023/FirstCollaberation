@@ -4,14 +4,14 @@ int callback_check(void *data , int argc , char **argv , char **azColName) {
     return 0;
 }
 
-inline int is_not_in(int id , int *a) {
+int is_not_in(int id , int *a) {
     for(int i = 1;i <= cnt;i++) {
         if(a[i] == id) return 1;
     }
     return 0;
 }
 
-inline int Choose_to_Withdraw(sqlite3 *db) {
+int Choose_to_Withdraw() {
     char *ID = NULL , *Err1 = NULL, *Err2 = NULL , *Err3 = NULL;
     int id = atoi(ID), nw1, nw2, nw3; Len = cnt = 0;
     const char *op1 = "select max(rowid) from %q_announce";
@@ -52,18 +52,18 @@ inline int Choose_to_Withdraw(sqlite3 *db) {
     return -1;
 }
 
-inline int print(sqlite3 *db) {
+int print() {
     fprintf(stdout , "已发送信息列表\n");
     return select_notices(1);
 }
 
-inline int Withdraw(sqlite3 *db) {
+int Withdraw() {
     int num = 10;
     for(;num > 0;num--) {
         refresh();
-        if(print(db) == 1) continue;
-        if(Choose_to_Withdraw(db) == 1) return 0;
+        if(print() == 1) continue;
+        if(Choose_to_Withdraw() == 1) return 0;
     }
     fprintf(stderr , "连接超时\n");
-    return -1;
+    return 1;
 }
