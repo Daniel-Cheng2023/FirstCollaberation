@@ -24,7 +24,7 @@ int Save( char *Title , char *Text , char *Announcer) {
 	char *sql = sqlite3_mprintf(op , Title , Text , Announcer);  //操作
 	nw = sqlite3_exec(db , sql , callback , 0 , &ErrMsg); 
 	if(nw != SQLITE_OK) {
-		fprintf(stderr , "保存失败\n");
+		fprintf(stderr , "保存失败1\n");
 		sqlite3_free(ErrMsg);
 		return -1;
 	}
@@ -34,7 +34,7 @@ int Save( char *Title , char *Text , char *Announcer) {
 		int *p = &cur;
 		nw2 = sqlite3_exec(db , sql2, callback_id , p , &ErrNum);
 		if(nw2 != SQLITE_OK) {
-			fprintf(stderr , "保存失败\n");	
+			fprintf(stderr , "保存失败2\n");	
 			sqlite3_free(ErrNum); 
 			return -1;
 		}

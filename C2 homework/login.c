@@ -165,6 +165,7 @@ int login(){
     }
     else if( t==0 ){
         printf( "未查找到该账号\n若为第一次使用, 请先注册一个账号\n" );
+        return -1;
     }
     sqlite3_free(stmt);
     return err;

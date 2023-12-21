@@ -136,8 +136,7 @@ int main(){
     }
     err = -1;
     while( err==-1 ){
-        err = 0;
-        while( user.id==NULL && ( err==-1 || err==0 ) ){
+        while( user.id==NULL){
             c = 0;
             while( c!='e' && c!='0' && c!='1' ){
                 printf( "\n选择登录或注册(0: 登录, 1: 注册, e: 退出程序): " );
@@ -168,10 +167,10 @@ int main(){
         }
         err = -1;
         while( err==-1 || err==0 ){
-            printf("----------菜单----------\n");
+            printf("\n----------菜单----------\n");
             c = 0;
             while( c!='e' && c!='0' && c!='1' && c!='2' && c!='3' && c!='4' && c!='5' ){
-                printf("0: 详细查询通知\n1: 修改密码\n2: 注销用户\n3: 人事调动\n4: 发送通知\n5: 撤回通知\ne: 登出\n");
+                printf("0: 详细查询通知\n1: 修改密码\n2: 注销用户\n3: 人事调动\n4: 发送通知\n5: 撤回通知\ne: 登出\n请输入: \n");
                 c = getchar();
                 clear_input_buffer();
             }
@@ -189,7 +188,7 @@ int main(){
                     break;
                 }
                 case '2':{
-                    err = close();
+                    err = qusi();
                     break;
                 }
                 case '3':{

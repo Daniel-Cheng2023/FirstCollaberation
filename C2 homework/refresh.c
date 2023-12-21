@@ -169,7 +169,7 @@ int record(){
     // 存储社团信息
     stmt0 = "select CLUBS.ID, CLUBS.name, ACCOUNT_CLUB.identity \
     from CLUBS inner join ACCOUNT_CLUB on \
-    CLUBS.ID == ACCOUNT_CLUB.course_ID and ACCOUNT_CLUB.ID == %Q;";
+    CLUBS.ID == ACCOUNT_CLUB.club_ID and ACCOUNT_CLUB.ID == %Q;";
     stmt = sqlite3_mprintf( stmt0, user.id );
     if( stmt == NULL ){
         sqlite3_free( stmt );
@@ -203,7 +203,6 @@ int get_authority( int p , int o ){
     int i, a;
     char *s;
 
-    putchar('\n');
     if( o==0 ){
         s = "管理员";
     }
@@ -225,7 +224,6 @@ int get_authority( int p , int o ){
             printf( "%d. %s 权限: %s\n", i+1, (user.clubs[o][i]).name, s );
         }
     }
-    putchar('\n');
     return 0;
 }
 
@@ -244,7 +242,6 @@ int get_authority( int p , int o ){
 int refresh_callback( void *t, int argc, char **argv, char **column){
     int i, k, *time = (int*)t;
 
-    putchar('\n');
     printf( "%d.\n", abs((*time)) );
     if( *(time) > 0 ){
         (*time)++;
@@ -271,7 +268,7 @@ int refresh_callback( void *t, int argc, char **argv, char **column){
             }
             case 2:{
                 if( (*time) > 0 ){
-                    printf( "发布者: %s%s\n", argv[i], argv[i+1] );
+                    printf( "发布者: %s\n学号: %s\n", argv[i], argv[i+1] );
                 }
                 break;
             }
@@ -305,12 +302,12 @@ int select_notices( int mode ){
     if( mode==0 ){
         printf( "收件箱: \n" );
         t=1;
-        stmt0="select * from %q_receive;";
+        stmt0="select title, content, announcer_name,announcer_id, launch_time from %q_receive;";
     }
     else{
         printf( "你发布的通知: \n");
         t=-1;
-        stmt0="select * from %q_announce;";
+        stmt0="select title, content, announcer_name,announcer_id, launch_time from %q_announce;";
     }
     stmt = sqlite3_mprintf( stmt0, user.id );
     if( stmt == NULL ){
@@ -347,50 +344,44 @@ int refresh(){
     char *stmt0, *stmt, *errmsg;
 
     putchar('\n');
-    printf( "你好, %s %s\n", user.name, user.id );
+    printf( "你好, %s %s\n\n", user.name, user.id );
     // 消除之前可能存在的表
     stmt0 = "drop table %q_receive;";
     stmt = sqlite3_mprintf( stmt0, user.id );
     if( stmt == NULL ){
-        sqlite3_free( stmt );
+        sqlite3_free(stmt);
         printf( "删除收件箱表时无法生成语句\n" );
         return 1;
     }
-    printf("\n%s\n", stmt);
     err = sqlite3_exec( db, stmt, NULL, NULL, &errmsg );
-    printf("\n%s\n", stmt);
+    sqlite3_free( stmt );
     if( err ){
-        sqlite3_free( stmt );
         printf( "无法执行删除收件箱语句\nsql error: %s\n", errmsg );
         sqlite3_free( errmsg );
     }
     stmt0 = "drop table %q_announce;";
     stmt = sqlite3_mprintf( stmt0, user.id );
-    printf("\n%s\n", stmt);
     err = sqlite3_exec( db, stmt, NULL, NULL, &errmsg );
-    printf("\n%s\n", stmt);
-    sqlite3_free(stmt);
     if( err ){
+        sqlite3_free(stmt);
         printf( "无法执行删除自己发送的通知的表语句\nsql error: %s\n", errmsg );
         sqlite3_free( errmsg );
     }
     // 收件箱建表
     stmt0 = "create table %q_receive(id TEXT not NULL,title TEXT,content TEXT not null,announcer_name TEXT,announcer_id TEXT,launch_time TEXT default current_timestamp,effect_time TEXT,dead_time TEXT);";
     stmt = sqlite3_mprintf( stmt0, user.id );
-    printf("\n%s\n", stmt);
     if( stmt == NULL ){
         sqlite3_free( stmt );
         printf( "无法生成收件箱建表语句\n" );
         return 1;
     }
     err = sqlite3_exec( db, stmt, NULL, NULL, &errmsg );
+    sqlite3_free(stmt);
     if( err ){
-        sqlite3_free( stmt );
         printf( "无法执行建立收件箱语句\nsql error: %s\n", errmsg );
         sqlite3_free( errmsg );
     }
-    sqlite3_free(stmt);
-    stmt0 = "insert into table %q_receive\
+    stmt0 = "insert into %q_receive\
     (id, title, content, announcer_name, announcer_id, launch_time, effect_time, dead_time) \
     select rowid, * from NOTICES where rowid in (\
         select NOTICE_DEPARTMENT.ID from NOTICE_DEPARTMENT where \

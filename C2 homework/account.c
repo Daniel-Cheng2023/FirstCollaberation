@@ -450,7 +450,7 @@ int log_out(){
 }
 
 // 注销函数
-int close(){
+int qusi(){
     int i, j, err;
     char c=0, *errmsg=NULL, *stmt, *stmt0;
 
@@ -464,6 +464,7 @@ int close(){
     }
     stmt0 = "delete from ACCOUNTS where ID==%Q;";
     stmt = sqlite3_mprintf( stmt0, user.id );
+    printf("%s\n", stmt);
     if( stmt == NULL ){
         sqlite3_free( stmt );
         fprintf( stderr, "无法生成注销语句!\n" );
@@ -485,7 +486,7 @@ int change_password(){
     int i, j, err;
     char c=0, *errmsg=NULL, *stmt, *stmt0, *password;
 
-    stmt0 = "update from ACCOUNTS set password=%Q where ID==%Q;";
+    stmt0 = "update ACCOUNTS set password=%Q where ID==%Q;";
     err = input_passwd( &password );
     if(err==-1){
         return -1;
