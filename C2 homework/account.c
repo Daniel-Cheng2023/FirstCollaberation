@@ -389,34 +389,11 @@ int change_people(){
     return 0;
 }
 
-// 注销函数
-/**/
-int close(){
+// 登出函数
+int log_out(){
     int i, j, err;
-    char c=0, *errmsg=NULL, *stmt, *stmt0;
+    char *errmsg=NULL, *stmt0, *stmt;
 
-    while( c!='1' && c!='e' ){
-        printf( "真的要注销吗?这会使你的账户消失(真的很久很久...)\n(1: 确认, e: 退出): " );
-        c = getchar();
-        clear_input_buffer();
-        if( c=='e' ){
-            return -1;
-        }
-    }
-    stmt0 = "delete from ACCOUNTS where ID==%Q;";
-    stmt = sqlite3_mprintf( stmt0, user.id );
-    if( stmt == NULL ){
-        sqlite3_free( stmt );
-        fprintf( stderr, "无法生成注销语句!\n" );
-        return 1;
-    }
-    err = sqlite3_exec( db, stmt, NULL, NULL, &errmsg );
-    if( err ){
-        sqlite3_free( stmt );
-        fprintf( stderr, "无法执行注销语句!\nSQL error: %s\n", errmsg );
-        sqlite3_free(errmsg);
-        return 2;
-    }
     stmt0 = "drop table %q_receive;";
     stmt = sqlite3_mprintf( stmt0, user.id );
     if( stmt == NULL ){
@@ -456,5 +433,68 @@ int close(){
     }
     Free( 3, &(user.id), &(user.name), &(user.password) );
     system("clear");
+    return 0;
+}
+
+// 注销函数
+/**/
+int close(){
+    int i, j, err;
+    char c=0, *errmsg=NULL, *stmt, *stmt0;
+
+    while( c!='1' && c!='e' ){
+        printf( "真的要注销吗?这会使你的账户消失(真的很久很久...)\n(1: 确认, e: 退出): " );
+        c = getchar();
+        clear_input_buffer();
+        if( c=='e' ){
+            return -1;
+        }
+    }
+    stmt0 = "delete from ACCOUNTS where ID==%Q;";
+    stmt = sqlite3_mprintf( stmt0, user.id );
+    if( stmt == NULL ){
+        sqlite3_free( stmt );
+        fprintf( stderr, "无法生成注销语句!\n" );
+        return 1;
+    }
+    err = sqlite3_exec( db, stmt, NULL, NULL, &errmsg );
+    if( err ){
+        sqlite3_free( stmt );
+        fprintf( stderr, "无法执行注销语句!\nSQL error: %s\n", errmsg );
+        sqlite3_free(errmsg);
+        return 2;
+    }
+    err = log_out();
+    return err;
+}
+
+// 修改密码函数
+int change_password(){
+    int i, j, err;
+    char c=0, *errmsg=NULL, *stmt, *stmt0, *password;
+
+    stmt0 = "update from ACCOUNTS set password=%Q where ID==%Q;";
+    err = input_passwd( &password );
+    if(err==-1){
+        return -1;
+    }
+    stmt = sqlite3_mprintf( stmt0, password, user.id );
+    if( stmt == NULL ){
+        sqlite3_free( stmt );
+        fprintf( stderr, "无法生成修改密码语句!\n" );
+        free(password);
+        return 1;
+    }
+    err = sqlite3_exec( db, stmt, NULL, NULL, &errmsg );
+    if( err ){
+        sqlite3_free( stmt );
+        fprintf( stderr, "无法执行修改密码语句!\nSQL error: %s\n", errmsg );
+        sqlite3_free(errmsg);
+        free(password);
+        return 2;
+    }
+    free(user.password);
+    user.password = password;
+    printf("修改密码成功\n");
     return 0;
 }

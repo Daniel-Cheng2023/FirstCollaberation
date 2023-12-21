@@ -39,7 +39,11 @@ const char *column_name[3] = { "学号", "姓名", "密码" };
 #include "login.c"
 #include "refresh.c"
 #include "account.c"
+#include "send.c"
+int Len = 0 , cnt = 0;
+#include "withdraw.c"
 
+/*
 int main( int argc, char *argv[] ){
     int err = 0;
     char *errmsg;
@@ -81,7 +85,7 @@ int main( int argc, char *argv[] ){
         return 1;
     }
     refresh();
-/*
+
     while(1) {
         char a = 2;
         while(a != '0' && a != '1' && a != 'e') {
@@ -103,6 +107,70 @@ int main( int argc, char *argv[] ){
         }
 
     }
-*/
     return 0;
+}
+*/
+
+int main(){
+    int err = -1;
+    char *errmsg = NULL, c;
+
+    err = sqlite3_open( "C2.db", &db );
+    if( err!=0 ){
+        printf("无法打开数据库: %s\n", sqlite3_errmsg(db) );
+        sqlite3_close(db);
+        return 1;
+    }
+    else{
+        printf("成功打开数据库\n");
+    }
+    err = sqlite3_exec( db, "PRAGMA foreign_keys=true;", NULL, NULL, &errmsg );
+    if( err!=0 ){
+        printf( "无法设置外键: %s\n", errmsg );
+        sqlite3_free(errmsg);
+        sqlite3_close(db);
+        return 1;
+    }
+    else{
+        printf("成功设置外键\n");
+    }
+    while( err==-1 ){
+        while( user.id == NULL ){
+            c = 2;
+            while( c!='e' && c!='0' && c!='1' ){
+                printf( "\n选择登录或注册(0: 登录, 1: 注册, e: 退出程序): " );
+                c = getchar();
+                clear_input_buffer();
+            }
+            switch(c){
+                case '0':{
+                    login();
+                    break;
+                }
+                case '1':{
+                    regist();
+                    break;
+                }
+                case 'e':{
+                    user.id = "exit";
+                    return 0;
+                }
+            }
+        }
+        err = refresh();
+        if(err){
+            return err;
+        }
+        err = -1;
+        while( err==-1 ){
+            printf("----------菜单----------\n");
+            if( (user.departments[0][0]).id==NULL && (user.courses[0][0]).id==NULL && (user.clubs[0][0]).id==NULL ){
+                while( c!='e' && c!='3' && c!='1' && c!='2' ){
+                    printf("1: 详细查询通知\n2: 修改密码\n3: 注销用户\ne: 登出\n");
+                    c = getchar();
+                    clear_input_buffer();
+                }
+            }
+        }
+    }
 }

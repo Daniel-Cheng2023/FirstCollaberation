@@ -1,33 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include "sqlite3.h"
-#include "input.c"
-#include "login.c"
-#include "new_send.c"
-#include "notice.c"
-#include "C2.c"
-#include "refresh.c"
-
-int Len = 0 , cnt = 0;
-static int callback(void *data, int argc, char **argv, char **azColName) {
-   int i;
-// fprintf(stdout , "%s", (const char *)data);
-   for(i = 0; i < argc; i++){
-      printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-   }
-   printf("\n");
-   return 0;
-}
-
-static int callback_id(void *data , int argc , char **argv, char **azColName) {
-    //do sth.
-    int *p; p = (int*) data;
-	p = atoi(argv[0]);
-    return 0;   
-}
-
-static int callback_check(void *data , int argc , char **argv , char **azColName) {
+int callback_check(void *data , int argc , char **argv , char **azColName) {
     int *fi; fi = (int *)data;
     fi[++cnt] = atoi(argv[0]);
     return 0;
@@ -41,8 +12,8 @@ inline int is_not_in(int id , int *a) {
 }
 
 inline int Choose_to_Withdraw(sqlite3 *db) {
-    char *ID = NULL , *nw1 = NULL, *nw2 = NULL , *nw3 = NULL , *Err1 = NULL, *Err2 = NULL , *Err3 = NULL;
-    int id = atoi(ID); Len = cnt = 0;
+    char *ID = NULL , *Err1 = NULL, *Err2 = NULL , *Err3 = NULL;
+    int id = atoi(ID), nw1, nw2, nw3; Len = cnt = 0;
     const char *op1 = "select max(rowid) from %q_announce";
     char *sql1 = sqlite3_mprintf(op1 , user.id);
     nw1 = sqlite3_exec(db , sql1 , callback_id, &Len , &Err1);
@@ -50,7 +21,7 @@ inline int Choose_to_Withdraw(sqlite3 *db) {
     const char *op2 = "select * from %q_announce";
     int tot = 10;
     for(;tot > 0;tot--) {
-        input_text("请输入你要撤回的信息的ID(输入e退出)" , 5 , ID);
+        input_text("请输入你要撤回的信息的ID(输入e退出)" , 5 , &ID );
         if(ID[0] == 'e') {
             free(a);
             return 0;
