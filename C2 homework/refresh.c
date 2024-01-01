@@ -123,7 +123,7 @@ int record(){
 
     // 初始化
     for( i=0;i<3;i++ ){
-        for( j=0;j<4;j++ ){
+        for( j=0;j<3;j++ ){
             num[i][j] = 0;
         }
     }
@@ -215,13 +215,18 @@ int get_authority( int p , int o ){
     // 查询院系权限
     for( i=0;i<num[p][o];i++ ){
         if( p==0 ){
-            printf( "%d. %s%s 权限: %s\n", i+1, (user.departments[o][i]).name, (user.departments[o][i]).class, s );
+            if( (user.departments[o][i]).class!=NULL ){
+                printf( "%d. %-33s%-6s 权限: %-12s\n", i+1, (user.departments[o][i]).name, (user.departments[o][i]).class, s );
+            }
+            else{
+                printf( "%d. %-39s 权限: %-12s\n", i+1, (user.departments[o][i]).name, s );
+            }
         }
         if( p==1 ){
-            printf( "%d. %s 权限: %s\n", i+1, (user.courses[o][i]).name, s );
+            printf( "%d. %-39s 权限: %-12s\n", i+1, (user.courses[o][i]).name, s );
         }
         if( p==2 ){
-            printf( "%d. %s 权限: %s\n", i+1, (user.clubs[o][i]).name, s );
+            printf( "%d. %-39s 权限: %-12s\n", i+1, (user.clubs[o][i]).name, s );
         }
     }
     return 0;
@@ -257,11 +262,14 @@ int refresh_callback( void *t, int argc, char **argv, char **column){
             }
             case 1:{
                 printf( "正文: " );
-                for( k=0;k<20;k++ ){
+                for( k=0;k<21;k++ ){
                     if( argv[1][k]==0 ){
                         break;
                     }
                     putchar( argv[1][k] );
+                }
+                if(k==21){
+                    printf("...");
                 }
                 putchar('\n');
                 break;
@@ -279,6 +287,74 @@ int refresh_callback( void *t, int argc, char **argv, char **column){
         }
     }
     putchar('\n');
+    return 0;
+}
+
+// 详细输出收件箱或自己发布的通知函数
+int refresh_callback_no_limit( void *t, int argc, char **argv, char **column){
+    int i, k;
+
+    putchar('\n');
+    for( i=0;i<argc;i++ ){
+        switch(i){
+            case 0:{
+                printf( "标题: %s\n", argv[i] );
+                break;
+            }
+            case 1:{
+                printf( "正文: %s\n", argv[i] );
+                break;
+            }
+            case 4:{
+                printf( "发布时间: %s\n", argv[i] );
+                break;
+            }
+        }
+    }
+    putchar('\n');
+    return 0;
+}
+
+// 查询通知(带限制)
+/*
+   查询收件箱和自己发布的通知
+
+   mode:
+   0: 收到的通知
+   1: 自己发的通知
+   offset: 第几个 
+
+   return:
+   0: 成功完成
+   1: 无法生成语句
+   2: 无法执行语句
+*/
+int select_notices_limit( int mode, int offset ){
+    int err, t;
+    char *stmt0, *stmt, *errmsg;
+
+    if( mode==0 ){
+        t=1;
+        stmt0="select title, content, announcer_name,announcer_id, launch_time from %q_receive limit 1 offset %d;";
+    }
+    else{
+        t=-1;
+        stmt0="select title, content, announcer_name,announcer_id, launch_time from %q_announce limit 1 offset %d;";
+    }
+    stmt = sqlite3_mprintf( stmt0, user.id, offset );
+    if( stmt == NULL ){
+        sqlite3_free( stmt );
+        printf( "查询通知时无法生成语句\n" );
+        return 1;
+    }
+    err = sqlite3_exec( db, stmt, refresh_callback_no_limit, &t, &errmsg );
+    if( err ){
+        sqlite3_free( stmt );
+        printf( "无法详细查询通知\nsql error: %s\n", errmsg );
+        sqlite3_free( errmsg );
+        return 1;
+    }
+    sqlite3_free( stmt );
     return 0;
 }
 
@@ -323,6 +399,7 @@ int select_notices( int mode ){
         return 1;
     }
     sqlite3_free( stmt );
+    putchar('\n');
     return 0;
 }
 
@@ -356,7 +433,7 @@ int refresh(){
     err = sqlite3_exec( db, stmt, NULL, NULL, &errmsg );
     sqlite3_free( stmt );
     if( err ){
-        printf( "无法执行删除收件箱语句\nsql error: %s\n", errmsg );
+        //printf( "无法执行删除收件箱语句\nsql error: %s\n", errmsg );
         sqlite3_free( errmsg );
     }
     stmt0 = "drop table %q_announce;";
@@ -364,7 +441,7 @@ int refresh(){
     err = sqlite3_exec( db, stmt, NULL, NULL, &errmsg );
     if( err ){
         sqlite3_free(stmt);
-        printf( "无法执行删除自己发送的通知的表语句\nsql error: %s\n", errmsg );
+        //printf( "无法执行删除自己发送的通知的表语句\nsql error: %s\n", errmsg );
         sqlite3_free( errmsg );
     }
     // 收件箱建表
@@ -372,51 +449,46 @@ int refresh(){
     stmt = sqlite3_mprintf( stmt0, user.id );
     if( stmt == NULL ){
         sqlite3_free( stmt );
-        printf( "无法生成收件箱建表语句\n" );
+        //printf( "无法生成收件箱建表语句\n" );
         return 1;
     }
     err = sqlite3_exec( db, stmt, NULL, NULL, &errmsg );
     sqlite3_free(stmt);
     if( err ){
-        printf( "无法执行建立收件箱语句\nsql error: %s\n", errmsg );
+        //printf( "无法执行建立收件箱语句\nsql error: %s\n", errmsg );
         sqlite3_free( errmsg );
     }
     stmt0 = "insert into %q_receive\
     (id, title, content, announcer_name, announcer_id, launch_time, effect_time, dead_time) \
-    select rowid, * from NOTICES where rowid in (\
+    select * from NOTICES where rowid in (\
         select NOTICE_DEPARTMENT.ID from NOTICE_DEPARTMENT where \
             NOTICE_DEPARTMENT.department_ID in (\
-                select ACCOUNT_DEPARTMENT.department_ID from ACCOUNT_DEPARTMENT where \
-                    ACCOUNT_DEPARTMENT.ID == %Q)\
+                select ACCOUNT_DEPARTMENT.department_ID from ACCOUNT_DEPARTMENT where (\
+                    ACCOUNT_DEPARTMENT.ID == %Q\
+                and\
+                (ACCOUNT_DEPARTMENT.identity&1)==1))\
             and\
             NOTICE_DEPARTMENT.class in (\
                 select ACCOUNT_DEPARTMENT.class from ACCOUNT_DEPARTMENT where \
                     ACCOUNT_DEPARTMENT.ID == %Q)\
-            and\
-            NOTICE_DEPARTMENT.identity in (\
-                select ACCOUNT_DEPARTMENT.identity from ACCOUNT_DEPARTMENT where \
-                    ACCOUNT_DEPARTMENT.ID == %Q)\
         union\
         select NOTICE_CLUB.ID from NOTICE_CLUB where \
             NOTICE_CLUB.club_ID in (\
-                select ACCOUNT_CLUB.club_ID from ACCOUNT_CLUB where \
-                    ACCOUNT_CLUB.ID == %Q)\
-            and\
-            NOTICE_CLUB.identity in (\
-                select ACCOUNT_CLUB.identity from ACCOUNT_CLUB where \
-                    ACCOUNT_CLUB.ID == %Q)\
+                select ACCOUNT_CLUB.club_ID from ACCOUNT_CLUB where (\
+                    ACCOUNT_CLUB.ID == %Q\
+                and\
+                (ACCOUNT_CLUB.identity&1)==1))\
         union\
         select NOTICE_COURSE.ID from NOTICE_COURSE where \
             NOTICE_COURSE.course_ID in (\
-                select ACCOUNT_COURSE.course_ID from ACCOUNT_COURSE where \
-                    ACCOUNT_COURSE.ID == %Q)\
-            and\
-            NOTICE_COURSE.identity in (\
-                select ACCOUNT_COURSE.identity from ACCOUNT_COURSE where \
-                    ACCOUNT_COURSE.ID == %Q)\
-    )";
+                select ACCOUNT_COURSE.course_ID from ACCOUNT_COURSE where (\
+                    ACCOUNT_COURSE.ID == %Q\
+                and\
+                (ACCOUNT_COURSE.identity&1)==1))\
+    )\
+    and NOTICES.announcer_id != %Q;";
     stmt = sqlite3_mprintf( stmt0, user.id, user.id, user.id, user.id, user.id, user.id, \
-    user.id, user.id );
+    user.id, user.id, user.id );
     if( stmt == NULL ){
         sqlite3_free( stmt );
         printf( "无法生成收件箱插表语句\n" );
@@ -449,7 +521,7 @@ int refresh(){
         sqlite3_free( errmsg );
     }
     sqlite3_free(stmt);
-    stmt0 = "insert into %q_announce(id, title, content, announcer_name, announcer_id, launch_time, effect_time, dead_time) select rowid, * from NOTICES where announcer_id==%Q;";
+    stmt0 = "insert into %q_announce(id, title, content, announcer_name, announcer_id, launch_time, effect_time, dead_time) select * from NOTICES where announcer_id==%Q;";
     stmt = sqlite3_mprintf( stmt0, user.id, user.id );
     if( stmt == NULL ){
         sqlite3_free( stmt );
@@ -473,6 +545,46 @@ int refresh(){
     for( i=0;i<3;i++ ){
         for( j=0;j<3;j++ ){
             get_authority( j, i );
+        }
+        putchar('\n');
+    }
+    return 0;
+}
+
+// 详细查询函数
+int one_notice(){
+    int rowid,err,mode,offset;
+    char *errmsg,*stmt0,*stmt,c;
+
+    err = -1;
+    while(err==-1){
+        c = 0;
+        offset = 0;
+        while( c!='0' && c!='1' && c!='e' ){
+            printf("请选择查询哪里的通知(0: 收件箱,1: 自己发送的通知,e: 返回菜单): ");
+            c = getchar();
+            clear_input_buffer();
+        }
+        if( c=='e' ){
+            return -1;
+        }
+        else if( c=='0' ){
+            mode = 0;
+        }
+        else if( c=='1' ){
+            mode = 1;
+        }
+        select_notices( mode );
+        while( !offset>0 && offset!=-1 ){
+            printf("请选择查询哪条通知(输入正整数序号, -1: 返回上级): ");
+            scanf( "%d", &offset );
+            clear_input_buffer();
+        }
+        if( offset==-1 ){
+            continue;
+        }
+        else if( offset>0 ){
+            err = select_notices_limit( mode, offset-1 );
         }
     }
     return 0;

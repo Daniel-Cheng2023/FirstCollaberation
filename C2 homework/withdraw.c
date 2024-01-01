@@ -60,10 +60,72 @@ int print() {
 int Withdraw() {
     int num = 10;
     for(;num > 0;num--) {
-        refresh();
-        if(print() == 1) continue;
-        if(Choose_to_Withdraw() == 1) return 0;
+        if( print() != 0 ) continue;
+        if( Choose_to_Withdraw() == 1 ) return 0;
     }
     fprintf(stderr , "连接超时\n");
     return 1;
+}
+
+int choose( int *p ){
+    int err, t = 0;
+    char *stmt0, *stmt, *errmsg = NULL;
+
+    select_notices( 1 );
+    stmt0 = "select * from %q_announce;";
+    stmt = sqlite3_mprintf( stmt0, user.id );
+    if( stmt==NULL ){
+        sqlite3_free(stmt);
+        printf("无法生成查询个数语句\n");
+        return 1;
+    }
+    err = sqlite3_exec( db, stmt, callback_frequency, &t, &errmsg );
+    sqlite3_free(stmt);
+    if( err!=0 ){
+        printf("无法执行查询次数语句\n");
+        return 2;
+    }
+    (*p) = -1;
+    while( (*p)<=0 || (*p)>t ){
+        printf("请输入撤回通知的正整数编号(-1: 返回上一级): ");
+        scanf("%d", p);
+        clear_input_buffer();
+        if( (*p)==-1 ){
+            return -1;
+        }
+    }
+    return 0;
+}
+
+int back( int n ){
+    int err;
+    char *stmt0, *stmt, *errmsg;
+
+    stmt0 = "delete from NOTICES where rowid in (select id from %q_announce limit 1 offset %d);";
+    stmt = sqlite3_mprintf( stmt0, user.id, n );
+    if( stmt==NULL ){
+        printf("无法生成撤回语句\n");
+        sqlite3_free(stmt);
+        return 1;
+    }
+    err = sqlite3_exec( db, stmt, NULL, NULL, &errmsg );
+    sqlite3_free(stmt);
+    if( err ){
+        printf("无法执行撤回语句\n");
+    }
+    return err;
+}
+
+int withdraw(){
+    int err, n;
+
+    err = -1;
+    while( err==-1 ){
+        choose(&n);
+        err = back( n-1 );
+    }
+    if( err==0 ){
+        printf( "成功撤回\n" );
+    }
+    return err;
 }

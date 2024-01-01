@@ -14,42 +14,46 @@ int search_callback( void *p, int argc, char **argv, char **column_name ){
    ID 是加入的人的id, id 是加入的组织的id所在数组中的位置+1
 */
 int add_people(){
-    int err, t, id;
-    char a, *errmsg = NULL, *ID, *class, *stmt0, *stmt, *select0, *select, authority;
+    int err, t, id, a;
+    char c, *errmsg = NULL, *ID, *class, *stmt0, *stmt, *select0, *select, authority;
 
     // 选择院系/课程/社团
     err = -1;
-    a = 0;
     while( err==-1 ){
-        while( a!='2' && a!='1' && a!='0' && a!='e' ){
-            printf("\n请输入加人进入哪类组织(0: 院系, 1: 课程, 2: 社团, e: 返回菜单): ");
-            a = getchar();
+        c = 0;
+        while( c!='2' && c!='1' && c!='0' && c!='e' ){
+            printf("\n请输入加人进入哪类组织(0: 院系, 1: 课程, 2: 社团, e: 返回上一级): ");
+            c = getchar();
             clear_input_buffer();
         }
-        if( a=='e' ){
+        if( c=='e' ){
             return -1;
         }
         id = 0;
-        switch(a){
+        a = atoi(&c);
+        switch(c){
             case '0':{
                 stmt0 = "insert into ACCOUNT_DEPARTMENT values(%Q,%Q,%Q,%c);";
                 printf( "你在如下院系/班级担任管理员\n" );
                 get_authority( a, 0 );
                 err = 1;
                 while( err!=0 ){
-                    printf( "请选择加人进入哪个院系/班级(请输入院系前的编号, -1: 返回上一级): \n" );
+                    printf( "请选择加人进入哪个院系/班级(请输入院系前的编号, -1: 返回上一级): " );
                     scanf( "%d", &id );
                     clear_input_buffer();
                     if( id==-1 ){
                         err =-1;
                         break;
                     }
-                    if( id >= num[a][0] || id <= 0 ){
+                    if( id > num[a][0] || id <= 0 ){
                         err = 1;
                         printf( "输入错误\n" );
                         continue;
                     }
                     class = (user.departments[0][id-1]).class;
+                    if( class==NULL ){
+                        stmt0 = "insert into ACCOUNT_DEPARTMENT values(%Q,%Q,%q,%c);";
+                    }
                     err = 0;
                 }
                 break;
@@ -60,14 +64,14 @@ int add_people(){
                 get_authority( a, 0 );
                 err = 1;
                 while( err!=0 ){
-                    printf( "请选择加人进入哪个课程(请输入课程的编号, e: 返回上一级): \n" );
+                    printf( "请选择加人进入哪个课程(请输入课程的编号, -1: 返回上一级): " );
                     scanf( "%d", &id );
                     clear_input_buffer();
                     if( id==-1 ){
                         err =-1;
                         break;
                     }
-                    if( id >= num[a][0] || id <= 0 ){
+                    if( id > num[a][0] || id <= 0 ){
                         err = 1;
                         printf( "输入错误\n" );
                         continue;
@@ -82,14 +86,14 @@ int add_people(){
                 get_authority( a, 0 );
                 err = 1;
                 while( err!=0 ){
-                    printf( "请选择加人进入哪个社团(请输入社团的编号, e: 返回上一级): \n" );
+                    printf( "请选择加人进入哪个社团(请输入社团的正整数编号, -1: 返回上一级): " );
                     scanf( "%d", &id );
                     clear_input_buffer();
                     if( id==-1 ){
-                        err =-1;
+                        err = -1;
                         break;
                     }
-                    if( id >= num[a][0] || id <= 0 ){
+                    if( id > num[a][0] || id <= 0 ){
                         err = 1;
                         printf( "输入错误\n" );
                         continue;
@@ -142,8 +146,7 @@ int add_people(){
             err = -1;
             authority = 0;
             while( err==-1 ){
-                printf( "被加者的权限\n(0: 无权限 1: 接收者 2: 发送者 3: 接收者+发送者 4: 管理员\n\
- 5: 接收者+管理员 6: 发送者+管理员 7: 全都要 e: 返回上一级): " );
+                printf( "被加者的权限(输入十进制整数, 其在二进制表示下, 1__: 接收者, _1_: 发送者, __1: 管理员, e: 返回上一级): " );
                 authority = getchar();
                 clear_input_buffer();
                 if( authority=='e' ){
@@ -160,9 +163,9 @@ int add_people(){
             }
         }
     }
-    switch(a){
+    switch(c){
         case '0':{
-            stmt = sqlite3_mprintf( stmt0, (user.departments[0][id-1]).id, ID, class, authority );
+            stmt = sqlite3_mprintf( stmt0, (user.departments[0][id-1]).id, ID, (class!=0)?class:"NULL", authority );
             break;
         }
         case '1':{
@@ -206,10 +209,10 @@ int delete_people(){
 
     // 选择院系/课程/社团
     err = -1;
-    a = 0;
     while( err==-1 ){
+        a = 0;
         while( a!='2' && a!='1' && a!='0' && a!='e' ){
-            printf("\n请输入从哪类组织中删人(0: 院系, 1: 课程, 2: 社团, e: 返回菜单): ");
+            printf("\n请输入从哪类组织中删人(0: 院系, 1: 课程, 2: 社团, e: 返回上一级): ");
             a = getchar();
             clear_input_buffer();
         }
@@ -225,14 +228,14 @@ int delete_people(){
                 get_authority( a, 0 );
                 err = 1;
                 while( err!=0 ){
-                    printf( "请选择从哪个院系/班级删人(请输入院系前的编号, -1: 返回上一级): \n" );
+                    printf( "请选择从哪个院系/班级删人(请输入院系前的编号, -1: 返回上一级): " );
                     scanf( "%d", &id );
                     clear_input_buffer();
                     if( id==-1 ){
                         err =-1;
                         break;
                     }
-                    if( id >= num[a][0] || id <= 0 ){
+                    if( id > num[a][0] || id <= 0 ){
                         err = 1;
                         printf( "输入错误\n" );
                         continue;
@@ -249,14 +252,14 @@ int delete_people(){
                 get_authority( a, 0 );
                 err = 1;
                 while( err!=0 ){
-                    printf( "请选择从哪个课程删人(请输入课程的编号, e: 返回上一级): \n" );
+                    printf( "请选择从哪个课程删人(请输入课程的编号, -1: 返回上一级): " );
                     scanf( "%d", &id );
                     clear_input_buffer();
                     if( id==-1 ){
                         err =-1;
                         break;
                     }
-                    if( id >= num[a][0] || id <= 0 ){
+                    if( id > num[a][0] || id <= 0 ){
                         err = 1;
                         printf( "输入错误\n" );
                         continue;
@@ -272,14 +275,14 @@ int delete_people(){
                 get_authority( a, 0 );
                 err = 1;
                 while( err!=0 ){
-                    printf( "请选择从哪个社团删人(请输入社团的编号, e: 返回上一级): \n" );
+                    printf( "请选择从哪个社团删人(请输入社团的编号, -1: 返回上一级): " );
                     scanf( "%d", &id );
                     clear_input_buffer();
                     if( id==-1 ){
                         err =-1;
                         break;
                     }
-                    if( id >= num[a][0] || id <= 0 ){
+                    if( id > num[a][0] || id <= 0 ){
                         err = 1;
                         printf( "输入错误\n" );
                         continue;
@@ -308,7 +311,7 @@ int delete_people(){
             t = 0;
             switch(a){
                 case '0':{
-                    select = sqlite3_mprintf( select0, (user.departments[0][id-1]).id, ID, class );
+                    select = sqlite3_mprintf( select0, (user.departments[0][id-1]).id, ID, class ? class : "NULL" );
                     break;
                 }
                 case '1':{
@@ -371,10 +374,11 @@ int delete_people(){
    2: 无法执行语句
 */
 int change_people(){
-    char c = 0;
+    char c;
     int i, a, err=-1;
 
     while( err==-1 ){
+        c = 0;
         while( c!='0' && c!='1' && c!='e' ){
             printf("请输入加人或删人(0: 加人, 1: 删人, e: 返回菜单): ");
             c = getchar();
@@ -436,7 +440,7 @@ int log_out(){
         sqlite3_free( errmsg );
     }
     for( i=0;i<3;i++ ){
-        for( j=0;j<4;j++ ){
+        for( j=0;j<3;j++ ){
             num[i][j] = 0;
         }
     }
@@ -464,7 +468,6 @@ int qusi(){
     }
     stmt0 = "delete from ACCOUNTS where ID==%Q;";
     stmt = sqlite3_mprintf( stmt0, user.id );
-    printf("%s\n", stmt);
     if( stmt == NULL ){
         sqlite3_free( stmt );
         fprintf( stderr, "无法生成注销语句!\n" );
@@ -478,6 +481,7 @@ int qusi(){
         return 2;
     }
     err = log_out();
+    printf("成功注销\n");
     return err;
 }
 

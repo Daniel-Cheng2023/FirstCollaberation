@@ -42,7 +42,8 @@ void clear_input_buffer( void ){
 */
 int inputs( const char *guide, int limit, char **ap ){
     printf( "%s(0: null, e: exit): ", guide );
-    *ap = (char *)malloc(limit);
+    *ap = (char *)malloc(limit*sizeof(char));
+    memset((*ap), 0, (limit+1)*sizeof(char));
     scanf( "%s", *ap );
     clear_input_buffer();
     if( strcmp(*ap,"0")==0 ){
@@ -53,7 +54,7 @@ int inputs( const char *guide, int limit, char **ap ){
         return 1;
     }
     else if( (*ap)[limit] != 0 ){
-        fprintf( stderr, "Memory leak risk when inputting %s!\n", guide );
+        fprintf( stderr, "%s不能超过%d位!\n", guide, limit );
         Free(1,ap);
         return -1;
     }

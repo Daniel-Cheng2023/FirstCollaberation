@@ -122,24 +122,24 @@ int main(){
         return 1;
     }
     else{
-        printf("成功打开数据库\n");
+//        printf("成功打开数据库\n");
     }
     err = sqlite3_exec( db, "PRAGMA foreign_keys=true;", NULL, NULL, &errmsg );
     if( err!=0 ){
-        printf( "无法设置外键: %s\n", errmsg );
-        sqlite3_free(errmsg);
+        printf("无法设置外键: %s\n", sqlite3_errmsg(db) );
         sqlite3_close(db);
         return 1;
     }
     else{
-        printf("成功设置外键\n");
+//        printf("成功设置外键\n");
     }
+    system("clear");
     err = -1;
     while( err==-1 ){
         while( user.id==NULL){
             c = 0;
             while( c!='e' && c!='0' && c!='1' ){
-                printf( "\n选择登录或注册(0: 登录, 1: 注册, e: 退出程序): " );
+                printf( "选择登录或注册(0: 登录, 1: 注册, e: 退出程序): " );
                 c = getchar();
                 clear_input_buffer();
             }
@@ -169,38 +169,38 @@ int main(){
         while( err==-1 || err==0 ){
             printf("\n----------菜单----------\n");
             c = 0;
-            while( c!='e' && c!='0' && c!='1' && c!='2' && c!='3' && c!='4' && c!='5' ){
-                printf("0: 详细查询通知\n1: 修改密码\n2: 注销用户\n3: 人事调动\n4: 发送通知\n5: 撤回通知\ne: 登出\n请输入: \n");
+            while( c!='e' && c!='d' && c!='p' && c!='c' && c!='h' && c!='s' && c!='w' && c!='r' ){
+                printf("d: 详细查询通知\np: 修改密码\nc: 注销用户\nh: 人事调动\ns: 发送通知\nw: 撤回通知\nr: 刷新\ne: 登出\n请输入: ");
                 c = getchar();
                 clear_input_buffer();
             }
             switch(c){
-                case '0':{
-                    err = select_notices(0);
-                    if(err){
-                        break;
-                    }
-                    err = select_notices(1);
+                case 'd':{
+                    err = one_notice();
                     break;
                 }
-                case '1':{
+                case 'p':{
                     err = change_password();
                     break;
                 }
-                case '2':{
+                case 'c':{
                     err = qusi();
                     break;
                 }
-                case '3':{
+                case 'h':{
                     err = change_people();
                     break;
                 }
-                case '4':{
-                    err = Send( user.name );
+                case 's':{
+                    err = Send( user.name, user.id );
                     break;
                 }
-                case '5':{
-                    err = Withdraw();
+                case 'w':{
+                    err = withdraw();
+                    break;
+                }
+                case 'r':{
+                    err = refresh();
                     break;
                 }
                 case 'e':{
@@ -208,10 +208,12 @@ int main(){
                     break;
                 }
             }
-            if( c=='e' || c=='2' ){
+            if( c=='e' || c=='c' ){
                 err = -1;
                 break;
             }
         }
     }
+    system("clear");
+    return 0;
 }

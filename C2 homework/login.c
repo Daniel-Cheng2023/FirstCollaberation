@@ -10,7 +10,7 @@
 */
 int regist(){
     int err = 1;
-    char *errmsg = NULL, *ID = NULL, *NAME = NULL, *passwd = NULL;
+    char *errmsg = NULL, *ID = NULL, *NAME = NULL, *passwd = NULL, *stmt0, *stmt;
 
     err = input_id(&ID);
     if( err==-1 ){
@@ -28,7 +28,6 @@ int regist(){
     }
     const char *insert = "insert into ACCOUNTS(ID,name,password) \
 VALUES(%Q,%Q,%Q);";
-    char *stmt;
     stmt = sqlite3_mprintf( insert, ID, NAME, passwd );
     Free( 3, &ID, &NAME, &passwd );
     if( stmt == NULL ){
@@ -39,7 +38,12 @@ VALUES(%Q,%Q,%Q);";
     err = sqlite3_exec( db, stmt, NULL, NULL, &errmsg);
     if( err ){
         sqlite3_free(stmt);
-        fprintf( stderr, "SQL error: %s\n", errmsg );
+        if( strcmp(errmsg, "UNIQUE constraint failed: ACCOUNTS.ID")==0 ){
+            printf("该账户已存在\n");
+        }
+        else{
+            fprintf( stderr, "SQL error: %s\n", errmsg );
+        }
         sqlite3_free(errmsg);
         return 2;
     }
@@ -117,12 +121,12 @@ int login(){
         switch(type){
             case '0':{
                 err = input_id( &ID_name );
-                stmt0 = "select * from ACCOUNTS where (ID == %Q) and (password == %Q)";
+                stmt0 = "select ID,name,password from ACCOUNTS where (ID == %Q) and (password == %Q)";
                 break;
             }
             case '1':{
                 err = input_name( &ID_name );
-                stmt0 = "select * from ACCOUNTS where (name == %Q) and (password == %Q)";
+                stmt0 = "select ID,name,password from ACCOUNTS where (name == %Q) and (password == %Q)";
                 break;
             }
             case 'e':{
